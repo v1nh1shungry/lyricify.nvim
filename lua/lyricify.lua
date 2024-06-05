@@ -8,6 +8,9 @@ local config = {
   update_interval = 500,
   min_width = 40,
   max_width = 120,
+  position = function(width, height)
+    return 1, math.floor((vim.o.columns - width) / 2)
+  end,
 }
 
 ---@type vim.SystemObj
@@ -65,13 +68,14 @@ local function update()
         if #lines == 2 then
           vim.highlight.range(bufnr, ns, "Comment", { 1, 0 }, { 1, string.len(lines[2]) })
         end
+        local row, col = config.position(width, #lines)
         vim.api.nvim_win_set_config(winid, {
           hide = false,
           relative = "editor",
           height = #lines,
           width = width,
-          row = 1,
-          col = math.floor((vim.o.columns - width) / 2),
+          row = row,
+          col = col,
         })
       else
         try_launch_server()
