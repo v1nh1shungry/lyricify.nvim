@@ -7,7 +7,7 @@ local timer = vim.uv.new_timer()
 local config = {
   update_interval = 500,
   min_width = 40,
-  max_width = 80,
+  max_width = 120,
 }
 
 ---@type vim.SystemObj
@@ -45,16 +45,16 @@ local function update()
           timer:stop()
           return
         end
-        local res = vim.json.decode(obj.stdout)
+        local res = vim.json.decode(obj.stdout, { luanil = { object = true, array = true } })
         local lines = {}
         if res.error then
           lines = { res.error }
         else
           lines = { res.lyric, res.tlyric }
         end
-        local width
+        local width = config.min_width
         for _, l in ipairs(lines) do
-          width = math.max(vim.fn.strdisplaywidth(l))
+          width = math.max(vim.fn.strdisplaywidth(l), width)
         end
         width = math.min(config.max_width, math.max(config.min_width, width))
         for i, l in ipairs(lines) do
@@ -63,7 +63,7 @@ local function update()
         vim.api.nvim_buf_clear_namespace(bufnr, ns, 0, -1)
         vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
         if #lines == 2 then
-          vim.highlight.range(bufnr, ns, "Comment", { 1, 0 }, { 1, vim.fn.strdisplaywidth(lines[1]) })
+          vim.highlight.range(bufnr, ns, "Comment", { 1, 0 }, { 1, string.len(lines[2]) })
         end
         vim.api.nvim_win_set_config(winid, {
           hide = false,

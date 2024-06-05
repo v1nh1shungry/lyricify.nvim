@@ -92,7 +92,7 @@ function parseLyrics(lyricStr) {
         if (!Number.isNaN(min) && !Number.isNaN(sec) && !otherInfoRegexp.test(text)) {
           return {
             startTime: min * 60 + sec,
-            text: text || "♪",
+            text: text || "♪♪♪",
           };
         }
         return {};
@@ -214,7 +214,7 @@ function lyricify() {
           currentIndex = index;
         }
       });
-      result.lyric = currentIndex === -1 ? "♪" : lyrics[currentIndex].text;
+      result.lyric = currentIndex === -1 ? "♪♪♪" : lyrics[currentIndex].text;
       if (tlyrics) {
         currentIndex = -1;
         tlyrics.forEach(({ startTime }, index) => {
@@ -229,11 +229,15 @@ function lyricify() {
     }
 
     try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 500);
       await fetch("http://localhost:12138", {
         method: "POST",
         mode: "no-cors",
         body: JSON.stringify(result),
+        signal: controller.signal,
       });
+      clearTimeout(id)
     } catch (err) {
     }
 
