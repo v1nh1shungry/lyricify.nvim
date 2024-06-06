@@ -15,6 +15,7 @@ Show the lyrics of the song Spotify playing inside your best editor ever! For fu
 * [Installation](#installation)
 * [Configuration](#configuration)
 * [Usage](#usage)
+* [How to do](#how-to-do)
 <!-- markdown-toc -->
 
 ## Requirements
@@ -66,3 +67,7 @@ spicetify apply
 * `show()`: show the lyric popup
 * `hide()`: hide the lyric popup
 * `toggle()`: toggle the lyric popup
+
+## How to do
+
+If you happen to be a Chinese speaker, you can go check my blog post 👉 [在 Neovim 中显示 Spotify 歌词](https://zhuanlan.zhihu.com/p/701959617)
