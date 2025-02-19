@@ -1,36 +1,3 @@
-# lyricify.nvim
-
-Show the lyrics of the song playing inside your best editor ever!
-
-This plugin uses [playerctl](https://github.com/altdesktop/playerctl) to get system media information, and fetch lyrics from a well-known Chinese streaming service [Netease Cloud Music](https://music.163.com/). **So be cautious if you're not a Chinese speaker.**
-
-![demo1](https://github.com/v1nh1shungry/lyricify.nvim/assets/98312435/df063fb4-5b44-4467-8773-b91d11085e9b)
-
-![demo2](https://github.com/v1nh1shungry/lyricify.nvim/assets/98312435/46753827-a8a9-41f0-bd2c-6dd355df63c8)
-
-## Requirements
-
-* Linux
-* Neovim >= 0.10
-* curl
-* playerctl
-* (Optional) [opencc](https://github.com/BYVoid/OpenCC)
-
-## Installation
-
-[lazy.nvim](https://github.com/folke/lazy.nvim)
-
-```lua
-{
-    "v1nh1shungry/lyricify.nvim",
-    cmd = "Lyricify",
-    event = "VeryLazy", -- recommended
-}
-```
-
-## Configuration
-
-```lua
 ---@class lyricify.config.Network
 ---@field timeout integer Connect timeout in milliseconds.
 ---@field retries integer
@@ -80,20 +47,57 @@ local DEFAULT_CONFIG = {
     wo = { winblend = 20 },
   },
 }
-```
 
-### Highlight Groups
+local VALIDATION_TABLE = { ---@type table<string, type | type[]>
+  debug = "boolean",
+  diff_time = "number",
+  interval = "number",
+  inactive_interval = "number",
+  ["network.timeout"] = "number",
+  ["network.retries"] = "number",
+  shift_time = { "number", "function" },
+  startup = "boolean",
+  ["win.opts"] = "table",
+  ["win.pos"] = { "table", "function" },
+  ["win.width"] = "number",
+  ["win.wo"] = "table",
+}
 
-* `LyricifyOriginal`: Highlight group for original lyric text in the popup.
-* `LyricifyTranslation`: Highlight group for lyric translation text in the popup, the plugin will automatically link it to `Comment` if it is not set.
+---@class lyricify.config: lyricify.config.Opts
+local M = {
+  __augroup = vim.api.nvim_create_augroup("lyricify.nvim", {}),
+  __cache_dir = vim.fs.joinpath(vim.fn.stdpath("cache"), "lyricify"),
+  __ns = vim.api.nvim_create_namespace("lyricify.nvim"),
+}
 
-## Usage
+---@param opts lyricify.config.Opts
+---@param prefix? string
+local function validate(opts, prefix)
+  for k, v in pairs(opts) do
+    local key = (prefix and (prefix .. ".") or "") .. k
+    if VALIDATION_TABLE[key] then
+      vim.validate(k, v, VALIDATION_TABLE[key])
+    elseif type(v) == "table" then
+      validate(v, k)
+    else
+      error(("unkown configuration field `%s`"):format(key))
+    end
+  end
+end
 
-The plugin will open lyrics popup window when there is music playing and hide the popup when there is no music automatically.
+---@param opts? lyricify.config.Opts
+function M.setup(opts)
+  opts = opts or {}
+  validate(opts)
+  M.options = vim.tbl_deep_extend("force", DEFAULT_CONFIG, opts)
+end
 
-### Command
-
-* `Lyricify [toggle]`: Toggle the lyrics popup window.
-* `Lyricify clear [this|all]`: Clear current playing's or all lyrics cache. Default to clear current playing if no argument.
-* `Lyricify shift [time]`: Shift the lyrics in milliseconds, if `time` is absent it prints current shift.
-* `Lyricify refresh`: Use it if the plugin seems to stuck. Useful when the plugin doesn't rescue from network issue.
+return setmetatable(M, {
+  __index = function(_, k)
+    if not rawget(M, "options") then
+      M.setup()
+    end
+    local opts = rawget(M, "options")
+    return k == "options" and opts or opts[k]
+  end,
+})
